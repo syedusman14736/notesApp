@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import Modal from '../components/modal/Modal';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 function Dashboard() {
 
@@ -8,6 +10,23 @@ function Dashboard() {
     const [notes, setNotes] = useState([]);
     const [noteId, setNoteId] = useState();
     const [isUpdate, setIsUpdate] = useState(false);
+    const navigate = useNavigate();
+
+    const checkAuth = async () => {
+        const authToken = localStorage.getItem('token');
+        const url = 'http://localhost:5000/dashboard'
+        const response = await axios.post(url, {}, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`,
+            }
+        })
+        if (response.data.status === false) {
+            localStorage.removeItem('token');
+            navigate('/login');
+            return
+        }
+    }
 
     const handleClose = () => {
         setisModal(false);
@@ -31,8 +50,11 @@ function Dashboard() {
     }
 
     const getDraftNote = () => {
-        const draftNotes = JSON.parse(localStorage.getItem('notes'));
-        setNotes([...draftNotes])
+        const localNotes = localStorage.getItem('notes');
+        if (localNotes) {
+            const draftNotes = JSON.parse(localNotes);
+            setNotes([...draftNotes])
+        }
     }
 
     const deleteNote = (id) => {
@@ -44,6 +66,7 @@ function Dashboard() {
     }
 
     useEffect(() => {
+        checkAuth();
         getDraftNote()
         setIsUpdate(false)
     }, [isModal, isUpdate])
